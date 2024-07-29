@@ -3,7 +3,6 @@ import string
 import argparse
 from cryptography.fernet import Fernet
 import base64
-import hashlib
 
 # Initialize a list to keep track of generated passwords
 password_history = set()
@@ -25,52 +24,63 @@ def decrypt_password(encrypted_password, key):
     return decrypted_password
 
 # Generate a random password
-def generate_password(length, use_uppercase, use_lowercase, use_numbers, use_special, pattern, key):
+def generate_password(length, use_uppercase, use_numbers, use_special, pattern, key):
     # Define character sets
     char_sets = {
-        'uppercase': string.ascii_uppercase,
         'lowercase': string.ascii_lowercase,
+        'uppercase': string.ascii_uppercase,
         'numbers': string.digits,
         'special': string.punctuation
     }
     
-    # Combine the character sets based on user input
-    characters = ''
+    # Default character sets with lower case letters being the predominant
+    characters = char_sets['lowercase']
+    proportions = {'lowercase': 1.5}
+    
     if use_uppercase:
         characters += char_sets['uppercase']
-    if use_lowercase:
-        characters += char_sets['lowercase']
+        proportions['uppercase'] = 1.0
     if use_numbers:
         characters += char_sets['numbers']
+        proportions['numbers'] = 0.8
     if use_special:
         characters += char_sets['special']
-    
+        proportions['special'] = 0.5
+
     # Ensure that characters are selected
     if not characters:
         raise ValueError("At least one character set must be selected.")
-
-    # Ensure password length is valid
-    if length < 8:
-        raise ValueError("Password length should be at least 8 characters.")
 
     # Generate the password based on pattern
     password = ''
     if pattern:
         if pattern == 'start_with_letter':
-            password += random.choice(char_sets['uppercase'] + char_sets['lowercase'])
+            password += random.choice(char_sets['lowercase'] + char_sets['uppercase'])
             length -= 1
         elif pattern == 'end_with_number':
             password += random.choice(char_sets['numbers'])
             length -= 1
 
-    # Add random characters to meet the length requirement
-    password += ''.join(random.choices(characters, k=length))
+    # Add characters in proportion to their defined weights
+    while length > 0:
+        char_type = random.choices(
+            list(proportions.keys()),
+            weights=list(proportions.values()),
+            k=1
+        )[0]
+        if char_type == 'lowercase':
+            password += random.choice(char_sets['lowercase'])
+        elif char_type == 'uppercase' and use_uppercase:
+            password += random.choice(char_sets['uppercase'])
+        elif char_type == 'numbers' and use_numbers:
+            password += random.choice(char_sets['numbers'])
+        elif char_type == 'special' and use_special:
+            password += random.choice(char_sets['special'])
+        length -= 1
 
     # Check for complexity rules
     if use_uppercase and not any(c.isupper() for c in password):
         password += random.choice(char_sets['uppercase'])
-    if use_lowercase and not any(c.islower() for c in password):
-        password += random.choice(char_sets['lowercase'])
     if use_numbers and not any(c.isdigit() for c in password):
         password += random.choice(char_sets['numbers'])
     if use_special and not any(c in string.punctuation for c in password):
@@ -81,14 +91,17 @@ def generate_password(length, use_uppercase, use_lowercase, use_numbers, use_spe
     
     # Ensure password uniqueness
     if password in password_history:
-        return generate_password(length, use_uppercase, use_lowercase, use_numbers, use_special, pattern, key)
+        return generate_password(length, use_uppercase, use_numbers, use_special, pattern, key)
     
     # Add password to history
     password_history.add(password)
     
-    # Encrypt the password before returning
-    encrypted_password = encrypt_password(password, key)
-    return encrypted_password
+    # Encrypt the password if a key is provided
+    if key:
+        encrypted_password = encrypt_password(password, key)
+        return encrypted_password
+    else:
+        return password
 
 # Evaluate password strength
 def evaluate_strength(password):
@@ -110,33 +123,40 @@ def evaluate_strength(password):
 
 # Main function to parse arguments and generate password
 def main():
-    parser = argparse.ArgumentParser(description="Random Password Generator")
-    parser.add_argument("--length", type=int, default=12, help="Length of the password")
-    parser.add_argument("--uppercase", action="store_true", help="Include uppercase letters")
-    parser.add_argument("--lowercase", action="store_true", help="Include lowercase letters")
-    parser.add_argument("--numbers", action="store_true", help="Include numbers")
-    parser.add_argument("--special", action="store_true", help="Include special characters")
+    parser = argparse.ArgumentParser(
+        description="Random Password Generator",
+        formatter_class=argparse.ArgumentDefaultsHelpFormatter
+    )
+    parser.add_argument("-l", "--length", type=int, default=8, help="Length of the password (default: 8)")
+    parser.add_argument("-u", "--uppercase", action="store_true", help="Include uppercase letters")
+    parser.add_argument("-n", "--numbers", action="store_true", help="Include numbers")
+    parser.add_argument("-s", "--special", action="store_true", help="Include special characters")
     parser.add_argument("--pattern", choices=['start_with_letter', 'end_with_number'], help="Specify a pattern for the password")
-    parser.add_argument("--key", type=str, help="Encryption key for storing passwords securely", required=True)
+    parser.add_argument("--key", type=str, help="Encryption key for storing passwords securely")
 
     args = parser.parse_args()
     
-    # Generate the cryptographic key for encryption
-    key = generate_key()
-    
+    # Generate the cryptographic key for encryption if a key is provided
+    key = None
+    if args.key:
+        key = generate_key()
+
     # Generate password
-    encrypted_password = generate_password(
+    generated_password = generate_password(
         args.length,
         args.uppercase,
-        args.lowercase,
         args.numbers,
         args.special,
         args.pattern,
         key
     )
     
-    # Decrypt the password for display
-    decrypted_password = decrypt_password(encrypted_password, key)
+    # Decrypt the password if a key was used for encryption
+    if key:
+        decrypted_password = decrypt_password(generated_password, key)
+    else:
+        decrypted_password = generated_password
+
     strength = evaluate_strength(decrypted_password)
     
     print(f"Generated Password: {decrypted_password}")
