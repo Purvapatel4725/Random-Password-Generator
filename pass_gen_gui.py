@@ -127,46 +127,47 @@ class PasswordGeneratorApp(tk.Tk):
     def __init__(self):
         super().__init__()
         self.title("Random Password Generator")
-        self.geometry("400x300")
+        self.geometry("400x400")
         
         self.create_widgets()
     
     def create_widgets(self):
         # Length input
-        tk.Label(self, text="Password Length:").pack(pady=5)
+        tk.Label(self, text="Password Length:", anchor="w").pack(fill="x", padx=10, pady=5)
         self.length_var = tk.IntVar(value=8)
-        tk.Entry(self, textvariable=self.length_var).pack(pady=5)
+        tk.Entry(self, textvariable=self.length_var).pack(fill="x", padx=10, pady=5)
         
         # Uppercase checkbox
         self.uppercase_var = tk.BooleanVar()
-        tk.Checkbutton(self, text="Include Uppercase Letters", variable=self.uppercase_var).pack(pady=5)
+        tk.Checkbutton(self, text="Include Uppercase Letters", variable=self.uppercase_var, anchor="w").pack(fill="x", padx=10, pady=5)
         
         # Numbers checkbox
         self.numbers_var = tk.BooleanVar()
-        tk.Checkbutton(self, text="Include Numbers", variable=self.numbers_var).pack(pady=5)
+        tk.Checkbutton(self, text="Include Numbers", variable=self.numbers_var, anchor="w").pack(fill="x", padx=10, pady=5)
         
         # Special characters checkbox
         self.special_var = tk.BooleanVar()
-        tk.Checkbutton(self, text="Include Special Characters", variable=self.special_var).pack(pady=5)
+        tk.Checkbutton(self, text="Include Special Characters", variable=self.special_var, anchor="w").pack(fill="x", padx=10, pady=5)
         
         # Pattern choice
-        tk.Label(self, text="Password Pattern:").pack(pady=5)
+        tk.Label(self, text="Password Pattern:", anchor="w").pack(fill="x", padx=10, pady=5)
         self.pattern_var = tk.StringVar(value='')
-        tk.Radiobutton(self, text="Start with Letter", variable=self.pattern_var, value="start_with_letter").pack(pady=5)
-        tk.Radiobutton(self, text="End with Number", variable=self.pattern_var, value="end_with_number").pack(pady=5)
-        tk.Radiobutton(self, text="No Pattern", variable=self.pattern_var, value="").pack(pady=5)
+        tk.Radiobutton(self, text="Start with Letter", variable=self.pattern_var, value="start_with_letter", anchor="w").pack(fill="x", padx=10, pady=5)
+        tk.Radiobutton(self, text="End with Number", variable=self.pattern_var, value="end_with_number", anchor="w").pack(fill="x", padx=10, pady=5)
+        tk.Radiobutton(self, text="No Pattern", variable=self.pattern_var, value="", anchor="w").pack(fill="x", padx=10, pady=5)
         
         # Encryption key input
-        tk.Label(self, text="Encryption Key (Optional):").pack(pady=5)
+        tk.Label(self, text="Encryption Key (Optional):", anchor="w").pack(fill="x", padx=10, pady=5)
         self.key_var = tk.StringVar()
-        tk.Entry(self, textvariable=self.key_var).pack(pady=5)
+        tk.Entry(self, textvariable=self.key_var).pack(fill="x", padx=10, pady=5)
         
         # Generate button
         tk.Button(self, text="Generate Password", command=self.generate_password).pack(pady=20)
         
         # Result area
-        self.result_text = tk.Text(self, height=6, width=50, wrap=tk.WORD)
-        self.result_text.pack(pady=5)
+        tk.Label(self, text="Result:", anchor="w").pack(fill="x", padx=10, pady=5)
+        self.result_text = tk.Text(self, height=8, width=50, wrap=tk.WORD)
+        self.result_text.pack(padx=10, pady=5)
     
     def generate_password(self):
         try:
